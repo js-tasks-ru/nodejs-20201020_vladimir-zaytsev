@@ -28,11 +28,11 @@ class LineSplitStream extends stream.Transform {
             this.output = ''; //очищаем остаток
         });
 
-        callback(null,chunk);
+        callback();
     }
 
     _flush(callback) {
-        //callback(null, this.output); //шлем остаток
+        callback(null, this.output); //шлем остаток
     }
 
 

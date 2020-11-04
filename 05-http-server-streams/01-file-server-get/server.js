@@ -26,17 +26,15 @@ server.on('request', async (req, res) => {
                 return;
             }
 
-            const existsSync = await fs.existsSync(filepath);
-
-            if (!existsSync) {
-                res.statusCode = 404;
-                res.end('Not found');
-                return;
-            }
 
             const r = fs.createReadStream(filepath);
 
-            r.on('error', () => {
+            r.on('error', (err) => {
+                if (err.code === 'ENOENT') {
+                    res.statusCode = 404;
+                    res.end('file not found');
+                    return;
+                }
                 res.statusCode = 500;
                 res.end('error read');
             }).pipe(res).on('error', () => {
@@ -52,7 +50,6 @@ server.on('request', async (req, res) => {
             res.end('Not implemented');
     }
 });
-
 
 
 module.exports = server;

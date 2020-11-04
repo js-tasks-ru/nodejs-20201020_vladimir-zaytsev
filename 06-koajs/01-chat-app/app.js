@@ -47,8 +47,10 @@ router.post('/publish', async (ctx) => {
     }
 
     for (const subscribeResolve of storageSubscribes) {
-        subscribeResolve(ctx.request.body.message);
+        await subscribeResolve(ctx.request.body.message);
     }
+
+    storageSubscribes.clear();
 
     ctx.statusCode = 201;
     ctx.body = {message};

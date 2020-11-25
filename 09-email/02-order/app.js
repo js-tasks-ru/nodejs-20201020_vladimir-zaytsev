@@ -1,5 +1,5 @@
 const Koa = require('koa');
-const { v4: uuid } = require('uuid');
+const {v4: uuid} = require('uuid');
 const Router = require('koa-router');
 const handleMongooseValidationError = require('./libs/validationErrors');
 const mustBeAuthenticated = require('./libs/mustBeAuthenticated');
@@ -17,49 +17,49 @@ const app = new Koa();
 app.use(require('koa-bodyparser')());
 
 app.use(async (ctx, next) => {
-  try {
-    await next();
-  } catch (err) {
-    if (err.status) {
-      ctx.status = err.status;
-      ctx.body = {error: err.message};
-    } else {
-      console.error(err);
-      ctx.status = 500;
-      ctx.body = {error: 'Internal server error'};
+    try {
+        await next();
+    } catch (err) {
+        if (err.status) {
+            ctx.status = err.status;
+            ctx.body = {error: err.message};
+        } else {
+            console.error(err);
+            ctx.status = 500;
+            ctx.body = {error: 'Internal server error'};
+        }
     }
-  }
 });
 
 app.use((ctx, next) => {
-  ctx.login = async function(user) {
-    const token = uuid();
-    await Session.create({token, user, lastVisit: new Date()});
+    ctx.login = async function (user) {
+        const token = uuid();
+        await Session.create({token, user, lastVisit: new Date()});
 
-    return token;
-  };
+        return token;
+    };
 
-  return next();
+    return next();
 });
 
 const router = new Router({prefix: '/api'});
 
 router.use(async (ctx, next) => {
-  const header = ctx.request.get('Authorization');
-  if (!header) return next();
+    const header = ctx.request.get('Authorization');
+    if (!header) return next();
 
-  const token = header.split(' ')[1];
-  if (!token) return next();
+    const token = header.split(' ')[1];
+    if (!token) return next();
 
-  const session = await Session.findOne({token}).populate('user');
-  if (!session) {
-    ctx.throw(401, 'Неверный аутентификационный токен');
-  }
-  session.lastVisit = new Date();
-  await session.save();
+    const session = await Session.findOne({token}).populate('user');
+    if (!session) {
+        ctx.throw(401, 'Неверный аутентификационный токен');
+    }
+    session.lastVisit = new Date();
+    await session.save();
 
-  ctx.user = session.user;
-  return next();
+    ctx.user = session.user;
+    return next();
 });
 
 router.get('/categories', categoryList);
@@ -76,8 +76,8 @@ router.get('/me', mustBeAuthenticated, me);
 router.post('/register', handleMongooseValidationError, register);
 router.post('/confirm', confirm);
 
-router.get('/orders', getOrdersList);
-router.post('/orders', checkout);
+router.get('/orders', mustBeAuthenticated, getOrdersList);
+router.post('/orders', mustBeAuthenticated, handleMongooseValidationError, checkout);
 
 app.use(router.routes());
 
